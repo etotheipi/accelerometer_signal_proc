@@ -1,0 +1,11 @@
+{
+  "data_dir": "./user_data",
+  "filt_avg_power": 2.0,
+  "filt_dc_ratio": 0.7,
+  "filt_power_ratio": 0.5,
+  "filt_min_samples_per_subj": 8,
+  "max_dt": 0.035,
+  "filt_min_timesteps_per_sample_ratio": 0.9,
+  "resample_dt": 0.03,
+  "window_size_sec": 4.3
+}
