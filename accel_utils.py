@@ -105,13 +105,13 @@ class AccelUtils:
         return valid_windows
     
     @staticmethod
-    def resample_and_truncate(window_df, dt_resample, max_pts):
+    def resample_and_truncate(window_df, dt_resample, max_pts, col='mag_acc'):
         # Need to truncate to a 
         ts = window_df['t']
-        mags = window_df['mag_acc']
+        vals = window_df[col]
 
         sample_pts = np.arange(ts.min(), ts.max(), step=dt_resample)
-        new_sample = np.interp(sample_pts, ts, mags)
+        new_sample = np.interp(sample_pts, ts, vals)
 
         return sample_pts[:max_pts], new_sample[:max_pts]
 
@@ -120,7 +120,7 @@ class AccelUtils:
         """
         Finds the three most dominant frequences in the sample, returns them sorted by freq
         """
-        ts, mags = AccelUtils.resample_and_truncate(window_df, dt_resample, max_pts)
+        _, mags = AccelUtils.resample_and_truncate(window_df, dt_resample, max_pts)
         fs, pxx = scipy.signal.periodogram(mags, 1/dt_resample)
         pxx = np.sqrt(pxx)
         i_peaks, _ = scipy.signal.find_peaks(pxx)
@@ -135,7 +135,7 @@ class AccelUtils:
     
     @staticmethod
     def compute_periodogram(window_df, dt_resample, max_pts, pow_exponent=0.5):
-        ts, mags = AccelUtils.resample_and_truncate(window_df, dt_resample, max_pts)
+        _, mags = AccelUtils.resample_and_truncate(window_df, dt_resample, max_pts)
         fs, fpow = scipy.signal.periodogram(mags, 1/dt_resample)
         fpow = fpow ** pow_exponent
         fpow_norm = fpow / np.sum(fpow)
@@ -165,4 +165,30 @@ class AccelUtils:
         print('Show which time-windows are considered valid by the specified criteria')
         fig.savefig(f'example_valid_windows_subj_{i_subj}.png')
         
-    
+
+    ## 3D Utils
+    @staticmethod
+    def rotation_matrix_a_onto_b(a, b):
+        # Formula from https://math.stackexchange.com/a/476310
+        v = np.cross(a, b)
+        s = np.linalg.norm(v)
+        c = np.dot(a, b)
+
+        vx = np.array([
+            [    0, -v[2],  v[1]],
+            [ v[2],     0, -v[0]],
+            [-v[1],  v[0],     0]
+        ])
+
+        rotation_matrix = np.eye(3) + vx + np.matmul(vx, vx) * (1 / (1 + c))
+        return rotation_matrix
+
+    @staticmethod
+    def estimate_gravity_and_rotation_matrix(df_subj):
+        grav_est = np.array([df_subj[col].mean() for col in ['x_acc', 'y_acc', 'z_acc']])
+
+        grav_est = grav_est / np.linalg.norm(grav_est)
+        grav_targ = np.array([0, 0, -1])
+
+        rot_matrix = AccelUtils.rotation_matrix_a_onto_b(grav_est, grav_targ)
+        return rot_matrix, grav_est
