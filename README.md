@@ -1,10 +1,10 @@
 # Subject Identification via Accelerometer
 Experiment to identify walking users via accelerometer in their pocket.  Dataset used:
 
-* https://archive.ics.uci.edu/ml/datasets/Activity+Recognition+from+Single+Chest-Mounted+Accelerometer
+* https://archive.ics.uci.edu/ml/datasets/User+Identification+From+Walking+Activity
 
 ```
-Casale, P. Pujol, O. and Radeva, P.
+--- Casale, P. Pujol, O. and Radeva, P.
 'Personalization and user verification in wearable systems using biometric walking patterns'
 Personal and Ubiquitous Computing, 16(5), 563-580, 2012
 ```
