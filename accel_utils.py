@@ -166,6 +166,7 @@ class AccelUtils:
         fig.savefig(f'example_valid_windows_subj_{i_subj}.png')
         
 
+class AccelUtils3D:
     ## 3D Utils
     @staticmethod
     def rotation_matrix_a_onto_b(a, b):
@@ -190,5 +191,47 @@ class AccelUtils:
         grav_est = grav_est / np.linalg.norm(grav_est)
         grav_targ = np.array([0, 0, -1])
 
-        rot_matrix = AccelUtils.rotation_matrix_a_onto_b(grav_est, grav_targ)
+        rot_matrix = AccelUtils3D.rotation_matrix_a_onto_b(grav_est, grav_targ)
         return rot_matrix, grav_est
+
+    @staticmethod
+    def align_window_acc_to_gravity(subj_window_df, with_norm=True):
+        rot_mtrx, _ = AccelUtils3D.estimate_gravity_and_rotation_matrix(subj_window_df)
+        xyz_vals = subj_window_df[['x_acc', 'y_acc', 'z_acc']].values
+        rotated_vals = rot_mtrx.dot(xyz_vals.T).T
+        if with_norm:
+            norm_vals = np.linalg.norm(rotated_vals, axis=1)
+            rotated_vals = rotated_vals / np.expand_dims(norm_vals, axis=1)
+
+        subj_window_df['x_rot'] = rotated_vals[:, 0]
+        subj_window_df['y_rot'] = rotated_vals[:, 1]
+        subj_window_df['z_rot'] = rotated_vals[:, 2]
+
+    @staticmethod
+    def compute_first_order_longitudes(subj_window_df):
+        # Project into xy plane, calc angle between (x1, y1) and (x2, y2)
+        xy_pairs = subj_window_df[['x_rot', 'y_rot']].values
+        xy_norms = np.linalg.norm(xy_pairs, axis=1)
+        xy_units = xy_pairs / np.expand_dims(xy_norms, axis=1) * 0.999
+        out = []
+        for r in range(xy_pairs.shape[0] - 1):
+            x1, y1 = xy_units[r+0, :]
+            x2, y2 = xy_units[r+1, :]
+            out.append(np.arcsin(x1 * y2 - x2 * y1))
+
+        return np.array(out)
+
+    @staticmethod
+    def compute_first_order_latitudes(subj_window_df):
+        # Assume unit vector inputs
+        lat_angles = np.arcsin(subj_window_df['z_rot'].values * 0.999)
+        return lat_angles[1:] - lat_angles[:-1]
+    
+    @staticmethod
+    def angle_periodogram(angle_diffs, dt_resample, pow_exponent=0.5):
+        fs, fpow = scipy.signal.periodogram(angle_diffs, 1/dt_resample)
+        fpow = fpow ** pow_exponent
+        fpow_norm = fpow / np.sum(fpow)
+        return fs, fpow_norm
+    
+    

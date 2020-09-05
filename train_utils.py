@@ -9,7 +9,7 @@ from sklearn.model_selection import StratifiedKFold
 class TrainUtils:
     
     @staticmethod
-    def get_skf_split(full_df, num_splits, split_idx, random_state=3141592653): 
+    def get_strat_kfold_split(full_df, num_splits, split_idx, random_state=3141592653): 
         """
         This assumes that there is a single label, and it's the last column
         StratifiedKFold is like KFold, but ensures equal distribution of each class labels
@@ -40,7 +40,7 @@ class TrainUtils:
         """
         y_true_agg, y_pred_agg = [], []
         for i in range(num_splits):
-            X_train, y_train, X_test, y_test = TrainUtils.get_skf_split(
+            X_train, y_train, X_test, y_test = TrainUtils.get_strat_kfold_split(
                 full_df,
                 num_splits,
                 i,
